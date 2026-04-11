@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💍 Luca & Émilie — 27 juin 2026</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{background:#FAF6EF;font-family:'Jost',sans-serif;color:#2D2D2D;min-height:100vh;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-thumb{background:#8FAD88;border-radius:4px;}
+    .tr{cursor:pointer;transition:transform 0.15s;}
+    .tr:hover{transform:translateX(3px);}
+    .pk{width:64px;height:64px;border-radius:14px;border:1.5px solid #e0dbd0;background:white;font-size:22px;font-family:'Jost',sans-serif;cursor:pointer;transition:all 0.15s;color:#2D2D2D;font-weight:500;}
+    .pk:hover{background:#f5ede0;border-color:#C4956A;}
+    .pk:active{transform:scale(0.93);}
+    .shake{animation:shake 0.4s;}
+    .pay-btn{border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-family:'Jost',sans-serif;font-size:11px;font-weight:500;transition:all 0.2s;white-space:nowrap;}
+    .pay-btn:active{transform:scale(0.95);}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+    @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+    .pop{animation:pop 0.25s;}
+    table{width:100%;border-collapse:collapse;}
+    a{color:#4a6e44;text-decoration:none;}
+    a:hover{text-decoration:underline;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const{useState,useEffect,createElement:h}=React;
+
+// ── Couleurs & styles ────────────────────
+const G="#4a6e44",S="#8FAD88",W="#C4956A",LT="#F5EFE0",DK="#2D2D2D",WH="#ffffff";
+const card={background:WH,borderRadius:14,padding:"13px 16px",boxShadow:"0 2px 12px rgba(74,110,68,0.07)",border:"1px solid #F5EFE0",marginBottom:10};
+
+// ── Données ──────────────────────────────
+const TABS=[
+  {id:"dashboard",icon:"💍",label:"Dashboard"},
+  {id:"filrouge",icon:"🎀",label:"Fil Rouge"},
+  {id:"budget",icon:"🔒",label:"Budget"},
+  {id:"invites",icon:"👥",label:"Invités"},
+  {id:"taches",icon:"✅",label:"Tâches"},
+  {id:"chambres",icon:"🏨",label:"Chambres"},
+  {id:"photos",icon:"📸",label:"Photos"},
+  {id:"contacts",icon:"📞",label:"Contacts"},
+];
+
+const BUDGET_INIT=[
+  {id:1,cat:"🎬 Prestataires",nom:"Repas traiteur Michel",devis:10000,devise:"EUR",resteInit:10000,deadline:"29/06",paye:false,notes:"Dégustation faite ✓"},
+  {id:2,cat:"🎬 Prestataires",nom:"Photographe Mauro",devis:1650,devise:"EUR",resteInit:1485,deadline:"11/07",paye:false,notes:"076/629.03.99"},
+  {id:3,cat:"🎬 Prestataires",nom:"Vidéaste Pierron",devis:1476,devise:"EUR",resteInit:738,deadline:"11/07",paye:false,notes:"Compte joint"},
+  {id:4,cat:"🎬 Prestataires",nom:"Fleuriste Dolce Terra",devis:1717,devise:"EUR",resteInit:1217,deadline:"—",paye:false,notes:"Payé 20/11 – Acompte ✅"},
+  {id:5,cat:"🎬 Prestataires",nom:"Cérémoniante Nathalie",devis:1100,devise:"EUR",resteInit:770,deadline:"—",paye:false,notes:"Acompte ✅"},
+  {id:6,cat:"🎬 Prestataires",nom:"DJ Marc",devis:600,devise:"CHF",resteInit:600,deadline:"—",paye:false,notes:"076/493.04.66"},
+  {id:7,cat:"💍 Personnel",nom:"Alliances",devis:1000,devise:"EUR",resteInit:479,deadline:"—",paye:false,notes:"Commandé – Acompte ✅"},
+  {id:8,cat:"💍 Personnel",nom:"Mariage civil",devis:400,devise:"CHF",resteInit:0,deadline:"20/04",paye:true,notes:""},
+  {id:9,cat:"💍 Personnel",nom:"Chorégraphe (séance)",devis:90,devise:"EUR",resteInit:90,deadline:"—",paye:false,notes:"2x/mois"},
+  {id:10,cat:"🏨 Hébergement",nom:"Chambre mariés (Le Crêt)",devis:280,devise:"EUR",resteInit:280,deadline:"29/06",paye:false,notes:""},
+  {id:11,cat:"🏨 Hébergement",nom:"Chambre DJ (Le Crêt)",devis:140,devise:"EUR",resteInit:140,deadline:"29/06",paye:false,notes:""},
+  {id:12,cat:"🎨 Déco & Animations",nom:"Photobooth",devis:310,devise:"EUR",resteInit:0,deadline:"—",paye:true,notes:"Livré sur place"},
+  {id:13,cat:"🎨 Déco & Animations",nom:"Housses de chaises",devis:200,devise:"CHF",resteInit:200,deadline:"—",paye:false,notes:""},
+  {id:14,cat:"🎨 Déco & Animations",nom:"Papeterie + cadeaux invités",devis:80,devise:"CHF",resteInit:80,deadline:"25/03",paye:false,notes:"Sirop d'érable"},
+];
+
+const TACHES_INIT=[
+  {id:1,mois:"🔴 MARS 2026",cat:"Repas",tache:"Dégustation traiteur Michel",qui:"Nous deux",deadline:"21/03",prio:"CRITIQUE",done:true,notes:"Gâteau choisi ✓"},
+  {id:2,mois:"🔴 MARS 2026",cat:"Cérémonie",tache:"Trouver rituel (médailles ou autre)",qui:"Nous deux",deadline:"22/03",prio:"CRITIQUE",done:false,notes:""},
+  {id:3,mois:"🔴 MARS 2026",cat:"KDO",tache:"Commander papeterie + cadeaux invités",qui:"Émilie",deadline:"25/03",prio:"HAUTE",done:true,notes:"En attente fioles sirop"},
+  {id:4,mois:"🔴 MARS 2026",cat:"Cérémonie",tache:"Répondre mail cérémoniante Nathalie",qui:"Nous deux",deadline:"15/03",prio:"HAUTE",done:true,notes:"Écrire les vœux"},
+  {id:5,mois:"🟠 AVRIL 2026",cat:"Alliances",tache:"Acheter alliances à Metz",qui:"Émilie",deadline:"01/04",prio:"CRITIQUE",done:true,notes:"Commandé, acompte versé"},
+  {id:6,mois:"🟠 AVRIL 2026",cat:"Tenues",tache:"Récupérer robe Émilie",qui:"Émilie",deadline:"05/04",prio:"HAUTE",done:true,notes:"Récupérée"},
+  {id:7,mois:"🟠 AVRIL 2026",cat:"Beauté",tache:"Essai coiffeur / maquilleur",qui:"Émilie",deadline:"08/04",prio:"HAUTE",done:false,notes:"En cours"},
+  {id:8,mois:"🟠 AVRIL 2026",cat:"Civil",tache:"Mariage civil",qui:"Nous deux",deadline:"20/04",prio:"HAUTE",done:false,notes:""},
+  {id:9,mois:"🟠 AVRIL 2026",cat:"Animation",tache:"Urne pour cash – commander",qui:"Nous deux",deadline:"01/04",prio:"MOYENNE",done:true,notes:"Commandé"},
+  {id:10,mois:"🟠 AVRIL 2026",cat:"Fleuriste",tache:"RDV fleuriste Dolce Terra",qui:"Luca & Émilie",deadline:"18/04",prio:"HAUTE",done:false,notes:"Déco chaises"},
+  {id:11,mois:"🟡 MAI 2026",cat:"DJ",tache:"Liste chansons + médley → Marc",qui:"Nous deux",deadline:"01/05",prio:"MOYENNE",done:false,notes:"Entrée, gâteau, bal"},
+  {id:12,mois:"🟡 MAI 2026",cat:"Danse",tache:"Continuer cours chorégraphie",qui:"Nous deux",deadline:"15/06",prio:"MOYENNE",done:false,notes:"2x/mois"},
+  {id:13,mois:"🟡 MAI 2026",cat:"Animation",tache:"Préparer questions jeux des duos",qui:"Guillaume + F1",deadline:"15/05",prio:"MOYENNE",done:false,notes:"25-30 questions"},
+  {id:14,mois:"🟡 MAI 2026",cat:"Déco",tache:"Menus kraft – design Canva",qui:"Floriane",deadline:"15/05",prio:"MOYENNE",done:false,notes:"Faire valider"},
+  {id:15,mois:"🟡 MAI 2026",cat:"Animation",tache:"Quiz tables (fiches imprimées)",qui:"Floriane",deadline:"15/05",prio:"MOYENNE",done:false,notes:"1 fiche/table"},
+  {id:16,mois:"🟡 MAI 2026",cat:"Déco",tache:"Atelier DIY panneau 'Find your seat'",qui:"G5 + Guillaume",deadline:"01/06",prio:"MOYENNE",done:false,notes:"Template faite"},
+  {id:17,mois:"🟡 MAI 2026",cat:"Cérémonie",tache:"Accessoires invités (chapeaux, protège-talons)",qui:"Floriane",deadline:"30/05",prio:"MOYENNE",done:false,notes:""},
+  {id:18,mois:"🟡 MAI 2026",cat:"Animation",tache:"Gazette des mariés – rédiger et imprimer",qui:"Floriane",deadline:"01/06",prio:"MOYENNE",done:false,notes:""},
+  {id:19,mois:"🔵 JUIN 2026",cat:"Photo",tache:"Envoyer liste photos à Mauro (18 groupes)",qui:"Nous deux",deadline:"20/06",prio:"HAUTE",done:false,notes:""},
+  {id:20,mois:"🔵 JUIN 2026",cat:"Vœux",tache:"Rédiger nos vœux",qui:"Chacun",deadline:"15/06",prio:"HAUTE",done:false,notes:"❤️"},
+  {id:21,mois:"🔵 JUIN 2026",cat:"DJ",tache:"Choisir musique ouverture de bal",qui:"Nous deux",deadline:"15/06",prio:"HAUTE",done:true,notes:"Marc informé"},
+  {id:22,mois:"🔵 JUIN 2026",cat:"Repas",tache:"Transmettre allergies au traiteur Michel",qui:"Luca & Émilie",deadline:"12/06",prio:"HAUTE",done:false,notes:"Fruits mer, poisson, noix coco…"},
+  {id:23,mois:"🔵 JUIN 2026",cat:"Déco",tache:"Imprimer plan de table grand format",qui:"Floriane",deadline:"15/06",prio:"HAUTE",done:false,notes:"1 grand + 1 backup"},
+  {id:24,mois:"🔵 JUIN 2026",cat:"Discours",tache:"Rédiger discours témoins",qui:"Guillaume + Floriane",deadline:"15/06",prio:"HAUTE",done:false,notes:""},
+  {id:25,mois:"🔵 JUIN 2026",cat:"Paiement",tache:"Payer solde traiteur",qui:"Nous deux",deadline:"29/06",prio:"CRITIQUE",done:false,notes:""},
+  {id:26,mois:"🔵 JUIN 2026",cat:"Paiement",tache:"Payer chambres mariés + DJ",qui:"Nous deux",deadline:"29/06",prio:"MOYENNE",done:false,notes:""},
+  {id:27,mois:"🔵 JUIN 2026",cat:"Paiement",tache:"Payer solde photographe",qui:"Nous deux",deadline:"11/07",prio:"HAUTE",done:false,notes:""},
+  {id:28,mois:"🔵 JUIN 2026",cat:"Paiement",tache:"Payer solde vidéaste",qui:"Nous deux",deadline:"11/07",prio:"HAUTE",done:false,notes:""},
+  {id:29,mois:"🔵 JUIN 2026",cat:"Paiement",tache:"Payer solde cérémoniante",qui:"Nous deux",deadline:"—",prio:"HAUTE",done:false,notes:"Vérifier deadline"},
+  {id:30,mois:"🔵 JUIN 2026",cat:"Paiement",tache:"Payer solde fleuriste",qui:"Nous deux",deadline:"—",prio:"HAUTE",done:false,notes:"Vérifier deadline"},
+];
+
+const ECH_INIT=[
+  {id:"e1",d:"20/04",t:"Mariage civil",done:false},
+  {id:"e2",d:"01/05",t:"Liste chansons → Marc DJ",done:false},
+  {id:"e3",d:"12/06",t:"Transmettre allergies au traiteur",done:false},
+  {id:"e4",d:"15/06",t:"Rédiger vœux · Plan de table · Discours",done:false},
+  {id:"e5",d:"20/06",t:"Envoyer liste photos à Mauro",done:false},
+  {id:"e6",d:"29/06",t:"Payer solde traiteur + chambres",done:false},
+  {id:"e7",d:"11/07",t:"Payer solde photographe + vidéaste",done:false},
+];
+
+const INVITES=[
+  {id:1,nom:"Susanna & famille Bianchi-Carrel",nb:3,cote:"Luca",chambre:"Non",arrivee:"Sam",brunch:0,allergies:"Menu enfant",notes:"Pas table enfant"},
+  {id:2,nom:"Jimmy Guedes & Margaux",nb:2,cote:"Luca",chambre:"Non",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:3,nom:"Mike De Groote & Noémie",nb:3,cote:"Luca",chambre:"Non",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:4,nom:"Guida Guedes",nb:1,cote:"Luca",chambre:"Non",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:5,nom:"Sarah Lartillerie & Matthias",nb:2,cote:"Émilie",chambre:"Non",arrivee:"Sam",brunch:2,allergies:"",notes:""},
+  {id:6,nom:"Marion Briand",nb:1,cote:"Émilie",chambre:"Non",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:7,nom:"Quelia Ferreira & Clara",nb:2,cote:"Luca",chambre:"Chalet",arrivee:"Sam",brunch:2,allergies:"Menu sans poisson (fille)",notes:"Mr peut-être absent"},
+  {id:8,nom:"Anthony Le Pen & Paola",nb:2,cote:"Luca",chambre:"Chalet",arrivee:"Sam",brunch:2,allergies:"",notes:"G4"},
+  {id:9,nom:"Rachel Houdret & Andréa Bazzichi",nb:2,cote:"Émilie",chambre:"Le Crêt",arrivee:"Sam",brunch:2,allergies:"⚠️ Allergie plumes! Literie synthétique",notes:""},
+  {id:10,nom:"Ludivine Tritz & Valentin Duchaine",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:11,nom:"Alex Saillen & Céline Guidoux",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Sam",brunch:2,allergies:"",notes:""},
+  {id:12,nom:"Gilles & Aline Spannagel",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:13,nom:"Morgan Loyer & Julien Louchart",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Sam",brunch:0,allergies:"",notes:""},
+  {id:14,nom:"Marc Pinto & Julie Raboud (DJ) ★",nb:2,cote:"Presta",chambre:"Le Crêt",arrivee:"Sam",brunch:2,allergies:"",notes:"Prestataire"},
+  {id:15,nom:"Emilio & Laly + Nona + Sacha",nb:4,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:4,allergies:"",notes:""},
+  {id:16,nom:"Laurence Cimino & Raphaël",nb:2,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:""},
+  {id:17,nom:"Natacha Cimino & Fabien + Iliana",nb:3,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:3,allergies:"Menu enfant",notes:""},
+  {id:18,nom:"Karim & Fabienne Essaheli",nb:2,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:""},
+  {id:19,nom:"Patrick Semedo",nb:1,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:1,allergies:"Fruits de mer",notes:"G1"},
+  {id:20,nom:"Céline Burnier",nb:1,cote:"Émilie",chambre:"Le Crêt",arrivee:"Ven",brunch:0,allergies:"",notes:""},
+  {id:21,nom:"Guillaume Chièze & Anna Lombari ★",nb:2,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:"Témoin ♂"},
+  {id:22,nom:"Sébastien Berset & Solange + Kayline",nb:3,cote:"Luca",chambre:"Chalet",arrivee:"Ven",brunch:3,allergies:"",notes:"G3"},
+  {id:23,nom:"Denis & Corine Appel",nb:2,cote:"Émilie",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:"Parents Émilie"},
+  {id:24,nom:"Floriane Appel & Kilian Guilbaut ★",nb:2,cote:"Émilie",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:"Témoin ♀"},
+  {id:25,nom:"Michel & Colette Lartillerie (GP)",nb:2,cote:"Émilie",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:"Grands-parents ⚠ Priorité photos"},
+  {id:26,nom:"Fred Bourgeois & Fabrice Appel",nb:2,cote:"Émilie",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:""},
+  {id:27,nom:"Pascal Lartillerie & Olivia Trinquet",nb:2,cote:"Émilie",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"Noix de coco",notes:"Parrain"},
+  {id:28,nom:"Valère Richier & Océane Guénégan",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Ven",brunch:2,allergies:"Poisson",notes:""},
+  {id:29,nom:"Céline Auburtin & Pierre-Louis Berthin",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Ven",brunch:2,allergies:"",notes:"Van, arrivée tard ven"},
+  {id:30,nom:"Raphaël Millot & Emmanuelle Thomassin",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Ven",brunch:2,allergies:"",notes:""},
+  {id:31,nom:"Florian Derlon & Mélina Mazzili",nb:2,cote:"Émilie",chambre:"Chalet",arrivee:"Ven",brunch:2,allergies:"",notes:""},
+  {id:32,nom:"Elvis & Marie Ciurleo + enfant",nb:3,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:0,allergies:"",notes:""},
+  {id:33,nom:"Lucia Bianchi (Nona)",nb:1,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:2,allergies:"",notes:"Maman Luca"},
+  {id:34,nom:"Michel & Marie Cercellier",nb:2,cote:"Luca",chambre:"Le Crêt",arrivee:"Ven",brunch:0,allergies:"",notes:""},
+];
+
+const FIL=[
+  {m:"🌿 Déco tables & salle",d:"08:00",f:"12:00",r:"Guillaume + Garçons",n:"Fleuriste arrive à 8h ⚠"},
+  {m:"Panneau 'Find your seat'",d:"08:00",f:"10:30",r:"G5 + Floriane",n:"DIY bois + enveloppes + eucalyptus"},
+  {m:"🏮 Photobooth – Installation",d:"08:00",f:"11:00",r:"G1 + G2",n:"Prévoir 2h minimum ⚠"},
+  {m:"Check hébergements & arrivées",d:"09:00",f:"16:30",r:"Guillaume + F6",n:"Tour complet des invités à 14h"},
+  {m:"🌸 Mise en place cérémonie",d:"14:00",f:"16:00",r:"G2+G3+G4+G5, F3+F4+F5+F6",n:"Cérémoniante sur place à 14h"},
+  {m:"💄 Préparatifs mariés",d:"14:30",f:"16:45",r:"Luca, Émilie + témoins",n:"Photographe arrive à 14h pour getting ready"},
+  {m:"🌸 Accueil & placement invités",d:"17:00",f:"17:15",r:"Guillaume + Floriane + cortège",n:"Mariés restent en coulisses"},
+  {m:"💍 Cérémonie laïque",d:"17:15",f:"18:30",r:"Nathalie (cérémoniante)",n:"~1h15 · Alliances portées par Guillaume"},
+  {m:"🥂 Vin d'honneur & photos groupe",d:"18:30",f:"19:30",r:"Guillaume pilote photos",n:"18 groupes — finir TOUS avant 19h15 ⚠"},
+  {m:"🎮 Animation : Jeux des duos",d:"19:30",f:"20:30",r:"Guillaume + F1 (micro)",n:"25-30 questions · Ardoises · Score affiché"},
+  {m:"🍽️ Apéro / Entrée en salle",d:"19:30",f:"20:30",r:"G1+G2 orientent les invités",n:"Plan de table visible · DJ en musique"},
+  {m:"🍽️ Repas principal",d:"21:00",f:"22:15",r:"Tout le monde",n:"Quiz bingo tables · Guillaume coordonne DJ"},
+  {m:"🧀 Fromage + lâcher lanternes",d:"22:15",f:"22:45",r:"G3+G4 distribuent lanternes",n:"Annonce lâcher à 22h20"},
+  {m:"🎂 Wedding Cake – Découpe",d:"23:00",f:"23:45",r:"G2+G3 distribuent parts",n:"Musique à choisir avec Marc"},
+  {m:"💃 Ouverture de bal",d:"00:00",f:"…",r:"Machine fumée lourde + Guillaume signal DJ",n:"Première danse → témoins envahissent la piste"},
+];
+
+const CRET=[
+  {nom:"Lucia Bianchi + Emilio, Lalyssia, Sacha",nb:4,ven:true,sam:true,ac:"77.50 €"},
+  {nom:"Laurence & Raphaël Cimino",nb:2,ven:true,sam:true,ac:"75.00 €"},
+  {nom:"Guillaume Chièze & Anna Lombari",nb:2,ven:true,sam:true,ac:"70.00 €"},
+  {nom:"Denis & Corine Appel",nb:2,ven:true,sam:true,ac:"70.00 €"},
+  {nom:"Floriane Appel & Kilian Guilbaut",nb:2,ven:true,sam:true,ac:"70.00 €"},
+  {nom:"Michel & Colette Lartillerie",nb:2,ven:true,sam:true,ac:"70.00 €"},
+  {nom:"Fred Bourgeois & Fabrice Appel",nb:2,ven:true,sam:true,ac:"70.00 €"},
+  {nom:"Pascal Lartillerie & Olivia Trinquet",nb:2,ven:true,sam:true,ac:"70.00 €"},
+  {nom:"Rachel & Andréa Bazzichi ⚠ Literie synthétique!",nb:2,ven:false,sam:true,ac:"—"},
+  {nom:"Luca & Émilie 💍",nb:2,ven:true,sam:true,ac:"—"},
+  {nom:"Marc Pinto & Julie Raboud (DJ)",nb:2,ven:false,sam:true,ac:"35.00 €"},
+  {nom:"Patrick Semedo",nb:1,ven:false,sam:true,ac:"—"},
+  {nom:"Céline Burnier",nb:1,ven:false,sam:true,ac:"—"},
+  {nom:"Elvis & Marie Ciurleo + enfant",nb:3,ven:true,sam:true,ac:"75.00 €"},
+  {nom:"Natacha Cimino & Fabien + enfant",nb:3,ven:true,sam:true,ac:"75.00 €"},
+  {nom:"Michel & Marie Cercellier",nb:2,ven:true,sam:true,ac:"—"},
+  {nom:"Karim & Fabienne Essaheli",nb:2,ven:true,sam:true,ac:"70.00 €"},
+];
+
+const CHALET=[
+  {nom:"Sébastien & Solange Berset + enfant",nb:3,ven:true,sam:false,ac:"—"},
+  {nom:"Céline Auburtin & Pierre-Louis Berthin",nb:2,ven:true,sam:true,ac:"—"},
+  {nom:"Florian Derlon & Mélina Mazzili",nb:2,ven:true,sam:true,ac:"—"},
+  {nom:"Valère Richier & Océane Guénégan",nb:2,ven:true,sam:true,ac:"—"},
+  {nom:"Raphaël Millot & Emmanuelle Thomassin",nb:2,ven:true,sam:true,ac:"—"},
+  {nom:"Quelia Ferreira & Clara",nb:2,ven:false,sam:true,ac:"100.00 €"},
+  {nom:"Anthony Le Pen & Paola Coppolaro",nb:2,ven:false,sam:true,ac:"—"},
+  {nom:"Ludivine Tritz & Valentin Duchaine",nb:2,ven:false,sam:true,ac:"35.00 €"},
+  {nom:"Alexandre Saillen & Céline Guidoux",nb:2,ven:false,sam:true,ac:"35.00 €"},
+  {nom:"Aline & Gilles Spannagel",nb:2,ven:false,sam:true,ac:"35.00 €"},
+  {nom:"Morgan Loyer & Julien Louchart",nb:2,ven:false,sam:true,ac:"35.00 €"},
+];
+
+const PHOTOS=[
+  {id:1,bloc:"💑 Portraits intimes",photo:"Mariés – portrait solo",personnes:"Luca & Émilie",duree:"5 min"},
+  {id:2,bloc:"💑 Portraits intimes",photo:"Luca avec sa maman (Nona)",personnes:"Luca + Lucia",duree:"3 min"},
+  {id:3,bloc:"💑 Portraits intimes",photo:"Luca avec ses enfants",personnes:"Luca + Emilio + Lalyssia",duree:"3 min"},
+  {id:4,bloc:"💑 Portraits intimes",photo:"Émilie avec ses parents",personnes:"Émilie + Denis + Corine",duree:"3 min"},
+  {id:5,bloc:"💑 Portraits intimes",photo:"Émilie avec sa sœur",personnes:"Émilie + Floriane",duree:"2 min"},
+  {id:6,bloc:"💑 Portraits intimes",photo:"Émilie + parents + sœur",personnes:"Émilie + Denis + Corine + Floriane",duree:"3 min"},
+  {id:7,bloc:"💑 Portraits intimes",photo:"Émilie + parents + grands-parents ⚠ LIBÉRER GP!",personnes:"+ Michel + Colette",duree:"3 min"},
+  {id:8,bloc:"💑 Portraits intimes",photo:"Les deux familles proches",personnes:"Luca & Émilie + Lucia + Denis + Corine",duree:"3 min"},
+  {id:9,bloc:"♥ Famille Luca",photo:"Famille proche Luca",personnes:"+ Susanna + Gilles + Sacha + Axel + Emilio + Lalyssia",duree:"4 min"},
+  {id:10,bloc:"♥ Famille Luca",photo:"Famille complète Luca",personnes:"+ Laurence + Raphaël + Natacha + Ilona + Fabien + Karim & Fabienne",duree:"5 min"},
+  {id:11,bloc:"♥ Famille Émilie",photo:"Famille complète Émilie",personnes:"Denis + Corine + Floriane + Kilian + Pascal + Olivia + Fred + Fabrice + Michel + Colette + Rachel + Andréa + Sarah + Matthias",duree:"5 min"},
+  {id:12,bloc:"♛ Deux Familles",photo:"Les deux familles complètes",personnes:"Famille Luca + Famille Émilie (sans amis)",duree:"6 min"},
+  {id:13,bloc:"★ Wedding Party",photo:"Luca + garçons d'honneur",personnes:"Luca + Guillaume + Patrick + Jimmy + Sébastien + Anthony",duree:"4 min"},
+  {id:14,bloc:"★ Wedding Party",photo:"Émilie + filles d'honneur",personnes:"Émilie + Ludivine + Sarah + Floriane + Céline A. + Mélina + Céline B.",duree:"4 min"},
+  {id:15,bloc:"★ Wedding Party",photo:"Tous témoins + mariés",personnes:"Luca & Émilie + tous garçons + toutes filles",duree:"5 min"},
+  {id:16,bloc:"◆ Amis",photo:"Amis de Luca + leurs +1",personnes:"Guillaume, Patrick, Jimmy, Sébastien, Anthony, Mike, Quelia, Karim, Marion, Alex…",duree:"5 min"},
+  {id:17,bloc:"◆ Amis",photo:"Amis d'Émilie + leurs +1",personnes:"Morgan, Julien, Céline A., Mélina, Ludivine, Céline B., Raphaël, Valère…",duree:"5 min"},
+  {id:18,bloc:"✦ TOUS",photo:"✦ PHOTO GÉNÉRALE ✦ 🎉",personnes:"TOUT LE MONDE — Annoncer au micro!",duree:"8 min"},
+];
+
+const CONTACTS=[
+  {role:"Photographe",nom:"Mauro",tel:"076/629.03.99",email:"",notes:"Arrivée 14h · Liste photos J-7"},
+  {role:"Vidéaste",nom:"Pierron Production",tel:"+33 7 67 92 98 18",email:"hello@pierronproduction.com",notes:"Arrivée 14h · Acompte payé"},
+  {role:"Fleuriste",nom:"Dolce Terra",tel:"",email:"",notes:"RDV à fixer · Apporter photos inspiration"},
+  {role:"Cérémoniante",nom:"Nathalie",tel:"",email:"nathalie-spectacles74@orange.fr",notes:"Présente à 14h · Briefing Guillaume & Floriane"},
+  {role:"DJ",nom:"Marc Pinto",tel:"+41 76 493 04 66",email:"",notes:"Liste chansons à envoyer avant 01/05"},
+  {role:"Lieu",nom:"Le Crêt – Morzine",tel:"",email:"info@lecret.com",notes:"905 Rte de la Plagne, 74110 Morzine · ⚠ Vérifier autorisation lanternes"},
+  {role:"Traiteur",nom:"Michel",tel:"",email:"",notes:"Allergies à transmettre avant 12/06"},
+  {role:"Chorégraphe",nom:"Cours danse",tel:"",email:"",notes:"2x/mois depuis janv. 2026"},
+  {role:"Témoin ♂",nom:"Guillaume Chièze",tel:"+41 76 253 30 56",email:"",notes:"Coordonne garçons d'honneur · Logistique"},
+  {role:"Témoin ♀",nom:"Floriane Appel",tel:"+33 6 89 91 88 28",email:"",notes:"Coordonne filles d'honneur · Déco & plan de table"},
+];
+
+// ── Helpers ──────────────────────────────
+function Chip({bg,col,children}){
+  return h('span',{style:{background:bg,color:col,padding:"2px 9px",borderRadius:10,fontSize:11,fontFamily:"'Jost'",fontWeight:500,display:"inline-block"}},children);
+}
+function CC({done,size=20}){
+  return h('div',{style:{width:size,height:size,borderRadius:"50%",border:`2px solid ${done?S:"#ccc"}`,background:done?S:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}},
+    done&&h('span',{style:{color:WH,fontSize:size*0.55,lineHeight:1}},"✓")
+  );
+}
+function PB({p}){
+  const m={CRITIQUE:["#fee2e2","#991b1b"],HAUTE:["#fde8d8","#9c4221"],MOYENNE:["#fef9c3","#854d0e"]};
+  const[bg,col]=m[p]||["#f5f5f5","#555"];
+  return h(Chip,{bg,col},p);
+}
+function CG(size,weight){return{fontFamily:"'Cormorant Garamond',serif",fontSize:size||16,fontWeight:weight||400,color:G};}
+
+// ── PIN Lock ──────────────────────────────
+function PinLock({onUnlock}){
+  const[entered,setEntered]=useState("");
+  const[shake,setShake]=useState(false);
+  const[err,setErr]=useState("");
+  const press=v=>{
+    if(entered.length>=4)return;
+    const next=entered+v;
+    setEntered(next);
+    if(next.length===4){
+      if(next==="2706"){setTimeout(()=>onUnlock(),200);}
+      else{setShake(true);setErr("Code incorrect");setTimeout(()=>{setEntered("");setShake(false);setErr("");},700);}
+    }
+  };
+  return h('div',{style:{display:"flex",flexDirection:"column",alignItems:"center",padding:"48px 20px"}},
+    h('div',{style:{...CG(26),marginBottom:6}},"💰 Budget"),
+    h('div',{style:{fontFamily:"'Jost'",fontSize:13,color:"#aaa",marginBottom:32}},"Accès protégé · Entrez votre code PIN"),
+    h('div',{style:{display:"flex",gap:12,marginBottom:20}},
+      [0,1,2,3].map(i=>h('div',{key:i,style:{width:14,height:14,borderRadius:"50%",background:i<entered.length?G:"#ddd",transition:"background 0.15s"}}))
+    ),
+    err&&h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:"#c0392b",marginBottom:12}},err),
+    h('div',{className:shake?"shake":"",style:{display:"grid",gridTemplateColumns:"repeat(3,64px)",gap:12}},
+      ["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>
+        k===""?h('div',{key:i}):h('button',{key:i,className:"pk",onClick:()=>k==="⌫"?setEntered(p=>p.slice(0,-1)):press(k)},k)
+      )
+    )
+  );
+}
+
+// ── Ligne budget ──────────────────────────
+function BudgetLine({item,onToggle}){
+  const isPaid=item.paye;
+  const reste=isPaid?0:item.resteInit;
+  const pct=item.devis>0?Math.min(100,((item.devis-reste)/item.devis)*100):0;
+  return h('div',{style:{...card,padding:"12px 16px",marginBottom:8,background:isPaid?"#f0fdf4":WH,borderLeft:`3px solid ${isPaid?S:reste>0?"#e67e22":LT}`,transition:"all 0.3s"}},
+    h('div',{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,alignItems:"center"}},
+      h('div',{style:{flex:1}},
+        h('div',{style:{...CG(14),textDecoration:isPaid?"line-through":"none",color:isPaid?"#888":DK}},item.nom),
+        item.notes&&h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:"#aaa",marginTop:2}},item.notes)
+      ),
+      h('div',{style:{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}},
+        h('span',{style:{fontFamily:"'Jost'",fontWeight:600,color:isPaid?"#aaa":G,fontSize:13,textDecoration:isPaid?"line-through":"none"}},item.devis.toLocaleString("fr")+" "+item.devise),
+        !isPaid&&reste>0&&h('span',{style:{fontFamily:"'Jost'",fontSize:11,color:"#e67e22"}},"reste "+reste.toLocaleString("fr")+" "+item.devise),
+        item.deadline!=="—"&&h(Chip,{bg:LT,col:G},"⏰ "+item.deadline),
+        h('button',{className:"pay-btn",onClick:()=>onToggle(item.id),
+          style:{background:isPaid?"#d4edda":"#4a6e44",color:isPaid?"#155724":"white",border:isPaid?"1px solid #b7e4c7":"none"}},
+          isPaid?"✅ Payé · Annuler":"Marquer payé"
+        )
+      )
+    ),
+    !isPaid&&h('div',{style:{marginTop:9,background:"#f0ece5",borderRadius:8,height:4,overflow:"hidden"}},
+      h('div',{style:{background:reste===0?S:W,height:"100%",borderRadius:8,width:pct+"%",transition:"width 0.5s"}})
+    )
+  );
+}
+
+// ── App principale ────────────────────────
+function App(){
+  const[tab,setTab]=useState("dashboard");
+  const[budget,setBudget]=useState(()=>BUDGET_INIT.map(b=>({...b})));
+  const[tasks,setTasks]=useState(TACHES_INIT);
+  const[echs,setEchs]=useState(ECH_INIT);
+  const[pd,setPd]=useState({});
+  const[cd,setCd]=useState({days:"-",hours:"-",min:"-",sec:"-"});
+  const[bu,setBu]=useState(false);
+  const[tf,setTf]=useState("all");
+  const[inf,setInf]=useState("all");
+  const[bFilter,setBFilter]=useState("all");
+
+  useEffect(()=>{
+    const wd=new Date("2026-06-27T17:00:00");
+    const tick=()=>{
+      const d=wd-new Date();
+      if(d<=0){setCd({days:0,hours:0,min:0,sec:0});return;}
+      setCd({days:Math.floor(d/86400000),hours:Math.floor((d%86400000)/3600000),min:Math.floor((d%3600000)/60000),sec:Math.floor((d%60000)/1000)});
+    };
+    tick();const t=setInterval(tick,1000);return()=>clearInterval(t);
+  },[]);
+
+  const togglePay=id=>setBudget(bs=>bs.map(b=>b.id===id?{...b,paye:!b.paye}:b));
+  const toggleTask=id=>setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!t.done}:t));
+  const toggleEch=id=>setEchs(es=>es.map(e=>e.id===id?{...e,done:!e.done}:e));
+
+  const totalGuests=INVITES.reduce((s,i)=>s+i.nb,0);
+  const tasksDone=tasks.filter(t=>t.done).length;
+  const paidCount=budget.filter(b=>b.paye).length;
+
+  const tGroups={};
+  tasks.filter(t=>tf==="all"||(tf==="pending"&&!t.done)||(tf==="done"&&t.done))
+    .forEach(t=>{if(!tGroups[t.mois])tGroups[t.mois]=[];tGroups[t.mois].push(t);});
+
+  const pGroups={};
+  PHOTOS.forEach(p=>{if(!pGroups[p.bloc])pGroups[p.bloc]=[];pGroups[p.bloc].push(p);});
+
+  const bCats={};
+  budget.filter(b=>bFilter==="all"||(bFilter==="paid"&&b.paye)||(bFilter==="unpaid"&&!b.paye))
+    .forEach(b=>{if(!bCats[b.cat])bCats[b.cat]=[];bCats[b.cat].push(b);});
+
+  const tEur=budget.filter(b=>b.devise==="EUR").reduce((s,b)=>s+b.devis,0);
+  const rEur=budget.filter(b=>b.devise==="EUR"&&!b.paye).reduce((s,b)=>s+b.resteInit,0);
+  const tChf=budget.filter(b=>b.devise==="CHF").reduce((s,b)=>s+b.devis,0);
+  const rChf=budget.filter(b=>b.devise==="CHF"&&!b.paye).reduce((s,b)=>s+b.resteInit,0);
+
+  const fInv=INVITES.filter(i=>inf==="luca"?i.cote==="Luca":inf==="emilie"?i.cote==="Émilie":inf==="allergy"?i.allergies!=="":true);
+  const thStyle={padding:"9px 10px",textAlign:"left",color:G,fontWeight:600,fontSize:11,whiteSpace:"nowrap",fontFamily:"'Jost'"};
+  const tdStyle=padding=>({padding:padding||"8px 10px",fontFamily:"'Jost'",fontSize:12});
+
+  return h('div',{style:{background:"#FAF6EF",minHeight:"100vh"}},
+
+    // HEADER
+    h('div',{style:{background:"linear-gradient(135deg,#4a6e44,#8FAD88)",padding:"24px 20px 18px",textAlign:"center",position:"relative",overflow:"hidden"}},
+      h('div',{style:{position:"absolute",top:-40,right:-40,width:120,height:120,background:"rgba(255,255,255,0.05)",borderRadius:"50%"}}),
+      h('div',{style:{fontFamily:"'Cormorant Garamond',serif",color:"white",fontSize:28,fontWeight:300,letterSpacing:3}},"💍 Luca & Émilie"),
+      h('div',{style:{fontFamily:"'Cormorant Garamond',serif",color:"rgba(255,255,255,0.82)",fontSize:15,fontStyle:"italic",marginTop:4}},"Mariage · 27 juin 2026 · Le Crêt, Morzine"),
+      h('div',{style:{display:"flex",justifyContent:"center",gap:10,marginTop:14,flexWrap:"wrap"}},
+        [{v:cd.days,l:"JOURS"},{v:cd.hours,l:"HEURES"},{v:cd.min,l:"MIN"},{v:cd.sec,l:"SEC"}].map(({v,l})=>
+          h('div',{key:l,style:{background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"8px 13px",minWidth:56,textAlign:"center"}},
+            h('div',{style:{fontFamily:"'Cormorant Garamond',serif",color:"white",fontSize:24,fontWeight:600,lineHeight:1}},v),
+            h('div',{style:{color:"rgba(255,255,255,0.7)",fontSize:9,letterSpacing:1,marginTop:2,fontFamily:"'Jost'"}},l)
+          )
+        )
+      )
+    ),
+
+    // TABS
+    h('div',{style:{background:WH,borderBottom:"1px solid #F5EFE0",overflowX:"auto",display:"flex",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}},
+      TABS.map(t=>h('button',{key:t.id,onClick:()=>{setTab(t.id);if(t.id!=="budget")setBu(false);},
+        style:{border:"none",background:"none",padding:"12px 13px",cursor:"pointer",fontFamily:"'Jost'",fontSize:12,fontWeight:500,
+          color:tab===t.id?G:"#777",borderBottom:tab===t.id?"2px solid #8FAD88":"2px solid transparent",whiteSpace:"nowrap",transition:"all 0.2s"}},
+        t.icon+" "+t.label))
+    ),
+
+    h('div',{style:{maxWidth:900,margin:"0 auto",padding:"20px 14px 60px"}},
+
+      // ── DASHBOARD ──
+      tab==="dashboard"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:16}},"Vue d'ensemble"),
+        h('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:16}},
+          [{label:"Invités",val:totalGuests,sub:"confirmés",c:G},{label:"Tâches",val:tasksDone+"/"+tasks.length,sub:"accomplies",c:S},{label:"Postes payés",val:paidCount+"/"+budget.length,sub:"prestataires",c:W},{label:"Jours",val:cd.days,sub:"jusqu'au 27/06",c:"#9b7cb6"}].map(({label,val,sub,c})=>
+            h('div',{key:label,style:{...card,borderLeft:"4px solid "+c,padding:"14px 16px",marginBottom:0}},
+              h('div',{style:{fontFamily:"'Jost'",fontSize:10,color:"#aaa",letterSpacing:0.5,marginBottom:3}},label.toUpperCase()),
+              h('div',{style:{...CG(28),color:c,fontWeight:600,lineHeight:1.1}},val),
+              h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:"#aaa",marginTop:2}},sub)
+            )
+          )
+        ),
+        h('div',{style:{...card,borderLeft:"4px solid #e67e22",background:"#fffbf5",marginBottom:14}},
+          h('div',{style:{...CG(17),color:"#9c4221",marginBottom:9}},"⚠️ Allergies & régimes spéciaux"),
+          INVITES.filter(i=>i.allergies).map(i=>h('div',{key:i.id,style:{display:"flex",gap:8,alignItems:"baseline",marginBottom:5,fontFamily:"'Jost'",fontSize:13}},
+            h('span',{style:{fontWeight:500}},i.nom),h('span',{style:{color:"#e67e22"}},"→ "+i.allergies)
+          ))
+        ),
+        h('div',{style:card},
+          h('div',{style:{...CG(17),marginBottom:11}},"📅 Prochaines échéances"),
+          h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:"#aaa",marginBottom:10}},"Cliquer pour cocher"),
+          echs.map(e=>h('div',{key:e.id,className:"tr",onClick:()=>toggleEch(e.id),
+            style:{display:"flex",gap:10,alignItems:"center",marginBottom:7,padding:"9px 11px",borderRadius:10,background:e.done?"#f0fdf4":WH,border:"1px solid "+(e.done?"#b7e4c7":"#F5EFE0"),opacity:e.done?0.6:1}},
+            h(CC,{done:e.done,size:18}),
+            h(Chip,{bg:LT,col:G},e.d),
+            h('span',{style:{fontFamily:"'Jost'",fontSize:13,textDecoration:e.done?"line-through":"none",color:e.done?"#aaa":DK}},e.t)
+          ))
+        )
+      ),
+
+      // ── FIL ROUGE ──
+      tab==="filrouge"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:4}},"🎀 Fil Rouge — 27 juin 2026"),
+        h('div',{style:{fontFamily:"'Jost'",fontSize:13,color:"#888",marginBottom:18}},"Rustique · Champêtre · Boho · Cérémonie 17h00"),
+        h('div',{style:{position:"relative"}},
+          h('div',{style:{position:"absolute",left:52,top:0,bottom:0,width:2,background:"linear-gradient(#8FAD88,#F5EFE0)",borderRadius:1}}),
+          FIL.map((m,i)=>h('div',{key:i,style:{display:"flex",gap:14,marginBottom:12,alignItems:"flex-start"}},
+            h('div',{style:{textAlign:"right",minWidth:48,fontFamily:"'Jost'",fontSize:11,fontWeight:600,color:G,paddingTop:12}},m.d),
+            h('div',{style:{position:"relative",zIndex:1}},h('div',{style:{width:13,height:13,borderRadius:"50%",background:S,border:"3px solid "+WH,boxShadow:"0 0 0 2px "+S,marginTop:12,marginLeft:-3}})),
+            h('div',{style:{...card,flex:1,padding:"11px 15px",marginBottom:0}},
+              h('div',{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4,marginBottom:3}},
+                h('div',{style:{...CG(15),color:G}},m.m),
+                h('span',{style:{fontFamily:"'Jost'",fontSize:10,color:"#aaa"}},m.d+" → "+m.f)
+              ),
+              h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:"#777",marginBottom:m.n?4:0}},"👤 "+m.r),
+              m.n&&h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:m.n.includes("⚠")?"#c0392b":"#888",background:m.n.includes("⚠")?"#fff5f5":LT,borderRadius:6,padding:"4px 8px"}},m.n)
+            )
+          ))
+        )
+      ),
+
+      // ── BUDGET (PIN) ──
+      tab==="budget"&&(bu
+        ?h('div',null,
+          h('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}},
+            h('div',{style:{...CG(26)}},"💰 Budget & Devis"),
+            h('div',{style:{display:"flex",gap:10,alignItems:"center"}},
+              h('span',{style:{fontFamily:"'Jost'",fontSize:12,color:"#888"}},paidCount+" / "+budget.length+" soldés"),
+              h('button',{onClick:()=>setBu(false),style:{border:"1px solid #F5EFE0",background:WH,borderRadius:10,padding:"6px 12px",cursor:"pointer",fontFamily:"'Jost'",fontSize:11,color:"#aaa"}},"🔒 Verrouiller")
+            )
+          ),
+          h('div',{style:{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}},
+            [{l:"EUR total",v:tEur.toLocaleString("fr")+" €",s:rEur>0?"reste "+rEur.toLocaleString("fr")+" €":"✅ Tout soldé",c:G,sc:rEur>0?"#e67e22":S},
+             {l:"CHF total",v:tChf.toLocaleString("fr")+" CHF",s:rChf>0?"reste "+rChf.toLocaleString("fr")+" CHF":"✅ Tout soldé",c:W,sc:rChf>0?"#e67e22":S}].map(({l,v,s,c,sc})=>
+              h('div',{key:l,style:{...card,flex:1,minWidth:140,borderLeft:"4px solid "+c,padding:"13px 16px",marginBottom:0}},
+                h('div',{style:{fontFamily:"'Jost'",fontSize:10,color:"#aaa",marginBottom:2}},l.toUpperCase()),
+                h('div',{style:{...CG(22),color:c,fontWeight:600}},v),
+                h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:sc,marginTop:2}},s)
+              )
+            )
+          ),
+          h('div',{style:{display:"flex",gap:8,marginBottom:16}},
+            [{id:"all",l:"Tous"},{id:"unpaid",l:"À payer"},{id:"paid",l:"✅ Soldés"}].map(f=>
+              h('button',{key:f.id,onClick:()=>setBFilter(f.id),
+                style:{border:"1px solid "+(bFilter===f.id?G:"#F5EFE0"),background:bFilter===f.id?G:WH,color:bFilter===f.id?WH:DK,borderRadius:20,padding:"5px 13px",cursor:"pointer",fontFamily:"'Jost'",fontSize:12,fontWeight:500}},f.l)
+            )
+          ),
+          Object.entries(bCats).map(([cat,items])=>h('div',{key:cat,style:{marginBottom:20}},
+            h('div',{style:{...CG(19),marginBottom:10}},cat),
+            items.map(b=>h(BudgetLine,{key:b.id,item:b,onToggle:togglePay}))
+          ))
+        )
+        :h(PinLock,{onUnlock:()=>setBu(true)})
+      ),
+
+      // ── INVITÉS ──
+      tab==="invites"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:4}},"👥 Invités"),
+        h('div',{style:{fontFamily:"'Jost'",fontSize:13,color:"#888",marginBottom:12}},totalGuests+" personnes confirmées"),
+        h('div',{style:{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}},
+          [{id:"all",l:"Tous"},{id:"luca",l:"Côté Luca"},{id:"emilie",l:"Côté Émilie"},{id:"allergy",l:"⚠️ Allergies"}].map(f=>
+            h('button',{key:f.id,onClick:()=>setInf(f.id),style:{border:"1px solid "+(inf===f.id?G:"#F5EFE0"),background:inf===f.id?G:WH,color:inf===f.id?WH:DK,borderRadius:20,padding:"6px 14px",cursor:"pointer",fontFamily:"'Jost'",fontSize:12,fontWeight:500}},f.l)
+          )
+        ),
+        h('div',{style:{overflowX:"auto"}},
+          h('table',{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
+            h('thead',null,h('tr',{style:{background:LT}},
+              ["Nom","Nb","Côté","Chambre","Arrivée","Brunch","Allergies / Notes"].map(hd=>h('th',{key:hd,style:thStyle},hd))
+            )),
+            h('tbody',null,fInv.map((inv,i)=>h('tr',{key:inv.id,style:{background:i%2===0?WH:"#faf8f4",borderBottom:"1px solid #F5EFE0"}},
+              h('td',{style:{...tdStyle(),fontWeight:500}},inv.nom),
+              h('td',{style:{...tdStyle(),textAlign:"center",fontWeight:600,color:G}},inv.nb),
+              h('td',{style:tdStyle()},h(Chip,{bg:inv.cote==="Luca"?"#e8f5e9":inv.cote==="Émilie"?"#fce4ec":"#ede7f6",col:inv.cote==="Luca"?"#2e7d32":inv.cote==="Émilie"?"#880e4f":"#4527a0"},inv.cote)),
+              h('td',{style:{...tdStyle(),color:"#666",fontSize:11}},inv.chambre),
+              h('td',{style:{...tdStyle(),color:"#777"}},inv.arrivee),
+              h('td',{style:{...tdStyle(),textAlign:"center",color:inv.brunch>0?G:"#ccc"}},inv.brunch>0?"✓ "+inv.brunch:"—"),
+              h('td',{style:{...tdStyle(),color:inv.allergies?"#c0392b":"#aaa",fontSize:11}},inv.allergies+(inv.allergies&&inv.notes?" · "+inv.notes:inv.notes||""))
+            )))
+          )
+        )
+      ),
+
+      // ── TÂCHES ──
+      tab==="taches"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:4}},"✅ Tâches"),
+        h('div',{style:{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}},
+          h('span',{style:{fontFamily:"'Jost'",fontSize:13,color:"#888",marginRight:4}},tasksDone+"/"+tasks.length+" accomplies"),
+          [{id:"all",l:"Toutes"},{id:"pending",l:"À faire"},{id:"done",l:"Faites ✓"}].map(f=>
+            h('button',{key:f.id,onClick:()=>setTf(f.id),style:{border:"1px solid "+(tf===f.id?G:"#F5EFE0"),background:tf===f.id?G:WH,color:tf===f.id?WH:DK,borderRadius:20,padding:"5px 13px",cursor:"pointer",fontFamily:"'Jost'",fontSize:12,fontWeight:500}},f.l)
+          )
+        ),
+        Object.entries(tGroups).map(([mois,ts])=>h('div',{key:mois,style:{marginBottom:22}},
+          h('div',{style:{...CG(20),marginBottom:10,paddingBottom:5,borderBottom:"2px solid #F5EFE0"}},mois),
+          ts.map(t=>h('div',{key:t.id,className:"tr",onClick:()=>toggleTask(t.id),
+            style:{...card,padding:"11px 15px",marginBottom:7,opacity:t.done?0.6:1,background:t.done?"#f0fdf4":WH,
+              borderLeft:"3px solid "+(t.done?S:t.prio==="CRITIQUE"?"#e74c3c":t.prio==="HAUTE"?W:LT)}},
+            h('div',{style:{display:"flex",gap:10,alignItems:"flex-start"}},
+              h(CC,{done:t.done,size:20}),
+              h('div',{style:{flex:1}},
+                h('div',{style:{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginBottom:3}},
+                  h(Chip,{bg:LT,col:G},t.cat),
+                  h('span',{style:{...CG(14),textDecoration:t.done?"line-through":"none",color:t.done?"#aaa":DK}},t.tache)
+                ),
+                h('div',{style:{display:"flex",gap:8,flexWrap:"wrap",fontFamily:"'Jost'",fontSize:12,color:"#888"}},
+                  h('span',null,"👤 "+t.qui),
+                  t.deadline!=="—"&&h('span',null,"⏰ "+t.deadline),
+                  t.notes&&h('span',{style:{color:"#bbb"}},"· "+t.notes)
+                )
+              ),
+              h(PB,{p:t.prio})
+            )
+          ))
+        ))
+      ),
+
+      // ── CHAMBRES ──
+      tab==="chambres"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:4}},"🏨 Répartition des chambres"),
+        h('div',{style:{fontFamily:"'Jost'",fontSize:13,color:"#888",marginBottom:20}},"905 Rte de la Plagne, 74110 Morzine · Source : Rooming officiel PDF"),
+        h('div',{style:{marginBottom:26}},
+          h('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:6}},
+            h('div',{style:{...CG(20)}},"🏨 Hôtel Le Crêt"),
+            h('div',{style:{display:"flex",gap:8}},
+              h(Chip,{bg:LT,col:G},"Ven : "+CRET.filter(r=>r.ven).reduce((s,r)=>s+r.nb,0)+" pers."),
+              h(Chip,{bg:LT,col:G},"Sam : "+CRET.filter(r=>r.sam).reduce((s,r)=>s+r.nb,0)+" pers.")
+            )
+          ),
+          h('div',{style:{overflowX:"auto"}},
+            h('table',{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
+              h('thead',null,h('tr',{style:{background:LT}},
+                ["Personnes","Nb","Ven 26/06","Sam 27/06","Acompte"].map(hd=>h('th',{key:hd,style:thStyle},hd))
+              )),
+              h('tbody',null,[...CRET.map((r,i)=>h('tr',{key:i,style:{background:i%2===0?WH:"#faf8f4",borderBottom:"1px solid #F5EFE0"}},
+                h('td',{style:{...tdStyle(),fontWeight:r.nom.includes("💍")?700:400,color:r.nom.includes("⚠")?"#c0392b":r.nom.includes("💍")?"#e74c3c":DK}},r.nom),
+                h('td',{style:{...tdStyle(),textAlign:"center",fontWeight:600,color:G}},r.nb),
+                h('td',{style:{...tdStyle(),textAlign:"center"}},r.ven?h('span',{style:{color:G,fontWeight:700}},"✓"):h('span',{style:{color:"#ddd"}},"—")),
+                h('td',{style:{...tdStyle(),textAlign:"center"}},r.sam?h('span',{style:{color:G,fontWeight:700}},"✓"):h('span',{style:{color:"#ddd"}},"—")),
+                h('td',{style:{...tdStyle(),color:r.ac==="—"?"#ccc":G,fontWeight:r.ac!=="—"?600:400,fontSize:11}},r.ac)
+              )),
+              h('tr',{key:"total",style:{background:LT,fontWeight:600}},
+                h('td',{style:{...tdStyle(),color:G,fontWeight:700}},"TOTAL"),
+                h('td',{style:{...tdStyle(),textAlign:"center",color:G,fontWeight:700}},CRET.reduce((s,r)=>s+r.nb,0)),
+                h('td',{style:{...tdStyle(),textAlign:"center",color:G,fontSize:11}},CRET.filter(r=>r.ven).reduce((s,r)=>s+r.nb,0)),
+                h('td',{style:{...tdStyle(),textAlign:"center",color:G,fontSize:11}},CRET.filter(r=>r.sam).reduce((s,r)=>s+r.nb,0)),
+                h('td',null)
+              )])
+            )
+          )
+        ),
+        h('div',null,
+          h('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:6}},
+            h('div',{style:{...CG(20)}},"🌲 Chalet Flo (belle-sœur)"),
+            h('div',{style:{display:"flex",gap:8}},
+              h(Chip,{bg:LT,col:G},"Ven : "+CHALET.filter(r=>r.ven).reduce((s,r)=>s+r.nb,0)+" pers."),
+              h(Chip,{bg:LT,col:G},"Sam : "+CHALET.filter(r=>r.sam).reduce((s,r)=>s+r.nb,0)+" pers.")
+            )
+          ),
+          h('div',{style:{overflowX:"auto"}},
+            h('table',{style:{width:"100%",borderCollapse:"collapse",fontSize:12}},
+              h('thead',null,h('tr',{style:{background:LT}},
+                ["Personnes","Nb","Ven 26/06","Sam 27/06","Acompte"].map(hd=>h('th',{key:hd,style:thStyle},hd))
+              )),
+              h('tbody',null,[...CHALET.map((r,i)=>h('tr',{key:i,style:{background:i%2===0?WH:"#faf8f4",borderBottom:"1px solid #F5EFE0"}},
+                h('td',{style:tdStyle()},r.nom),
+                h('td',{style:{...tdStyle(),textAlign:"center",fontWeight:600,color:G}},r.nb),
+                h('td',{style:{...tdStyle(),textAlign:"center"}},r.ven?h('span',{style:{color:G,fontWeight:700}},"✓"):h('span',{style:{color:"#ddd"}},"—")),
+                h('td',{style:{...tdStyle(),textAlign:"center"}},r.sam?h('span',{style:{color:G,fontWeight:700}},"✓"):h('span',{style:{color:"#ddd"}},"—")),
+                h('td',{style:{...tdStyle(),color:r.ac==="—"?"#ccc":G,fontWeight:r.ac!=="—"?600:400,fontSize:11}},r.ac)
+              )),
+              h('tr',{key:"total",style:{background:LT,fontWeight:600}},
+                h('td',{style:{...tdStyle(),color:G,fontWeight:700}},"TOTAL"),
+                h('td',{style:{...tdStyle(),textAlign:"center",color:G,fontWeight:700}},CHALET.reduce((s,r)=>s+r.nb,0)),
+                h('td',{style:{...tdStyle(),textAlign:"center",color:G,fontSize:11}},CHALET.filter(r=>r.ven).reduce((s,r)=>s+r.nb,0)),
+                h('td',{style:{...tdStyle(),textAlign:"center",color:G,fontSize:11}},CHALET.filter(r=>r.sam).reduce((s,r)=>s+r.nb,0)),
+                h('td',null)
+              )])
+            )
+          )
+        )
+      ),
+
+      // ── PHOTOS ──
+      tab==="photos"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:4}},"📸 Photos de groupe"),
+        h('div',{style:{fontFamily:"'Jost'",fontSize:13,color:"#888",marginBottom:12}},"18 photos · ~75 min · Guillaume pilote au micro"),
+        h('div',{style:{...card,background:LT,marginBottom:14,padding:"11px 15px"}},
+          h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:G}},"💡 Annoncer le prochain groupe · Libérer anciens & enfants EN PRIORITÉ · Ajouter des gens, ne renvoyer pas le groupe · 1 témoin par famille")
+        ),
+        h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:"#aaa",marginBottom:12}},Object.values(pd).filter(Boolean).length+" / "+PHOTOS.length+" photos cochées"),
+        Object.entries(pGroups).map(([bloc,photos])=>h('div',{key:bloc,style:{marginBottom:18}},
+          h('div',{style:{...CG(18),marginBottom:8}},bloc),
+          photos.map(p=>h('div',{key:p.id,className:"tr",onClick:()=>setPd(prev=>({...prev,[p.id]:!prev[p.id]})),
+            style:{...card,padding:"11px 14px",marginBottom:6,opacity:pd[p.id]?0.55:1,borderLeft:"3px solid "+(pd[p.id]?S:LT)}},
+            h('div',{style:{display:"flex",gap:10,alignItems:"flex-start"}},
+              h(CC,{done:!!pd[p.id],size:20}),
+              h('div',{style:{flex:1}},
+                h('div',{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}},
+                  h('span',{style:{...CG(14),textDecoration:pd[p.id]?"line-through":"none",color:pd[p.id]?"#aaa":DK}},"#"+p.id+" · "+p.photo),
+                  h(Chip,{bg:LT,col:"#aaa"},"⏱ "+p.duree)
+                ),
+                h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:"#888",marginTop:3}},p.personnes)
+              )
+            )
+          ))
+        ))
+      ),
+
+      // ── CONTACTS ──
+      tab==="contacts"&&h('div',null,
+        h('div',{style:{...CG(26),marginBottom:18}},"📞 Contacts & Prestataires"),
+        h('div',{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12}},
+          CONTACTS.map((c,i)=>h('div',{key:i,style:{...card,padding:"16px",marginBottom:0}},
+            h('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}},
+              h('div',null,
+                h('div',{style:{fontFamily:"'Jost'",fontSize:10,color:"#bbb",letterSpacing:1,marginBottom:2}},c.role.toUpperCase()),
+                h('div',{style:{...CG(18)}},c.nom)
+              ),
+              h(Chip,{bg:"#d4edda",col:"#155724"},"✅ Confirmé")
+            ),
+            c.tel&&h('div',{style:{fontFamily:"'Jost'",fontSize:13,marginBottom:4}},"📞 ",h('a',{href:"tel:"+c.tel,style:{color:G,fontWeight:500}},c.tel)),
+            c.email&&h('div',{style:{fontFamily:"'Jost'",fontSize:13,marginBottom:4}},"✉️ ",h('a',{href:"mailto:"+c.email,style:{color:G,fontSize:12}},c.email)),
+            c.notes&&h('div',{style:{fontFamily:"'Jost'",fontSize:12,color:"#888",background:LT,borderRadius:8,padding:"6px 10px",marginTop:6}},c.notes)
+          ))
+        )
+      )
+    ),
+
+    h('div',{style:{textAlign:"center",padding:"16px",fontFamily:"'Jost'",fontSize:11,color:"#bbb"}},"💍 Luca & Émilie · 27 juin 2026 · Le Crêt, Morzine")
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
