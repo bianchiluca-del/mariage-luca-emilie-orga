@@ -6,6 +6,9 @@
   <title>💍 Luca & Émilie — 27 juin 2026</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -27,18 +30,36 @@
     table{width:100%;border-collapse:collapse;}
     a{color:#4a6e44;text-decoration:none;}
     a:hover{text-decoration:underline;}
+    .sync-dot{width:8px;height:8px;border-radius:50%;background:#8FAD88;display:inline-block;margin-right:5px;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
+
+// ══════════════════════════════════════════
+// 🔥 FIREBASE CONFIG — colle ta config ici
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDMzxYnNhnr-GJYDzRcrujfb5mtbHz370M",
+  authDomain: "mariage-luca-emilie-a27d5.firebaseapp.com",
+  projectId: "mariage-luca-emilie-a27d5",
+  storageBucket: "mariage-luca-emilie-a27d5.firebasestorage.app",
+  messagingSenderId: "188881014455",
+  appId: "1:188881014455:web:a62836f0131d2c3d84c732"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// ══════════════════════════════════════════
+
 const{useState,useEffect,createElement:h}=React;
 
 // ── Couleurs & styles ────────────────────
 const G="#4a6e44",S="#8FAD88",W="#C4956A",LT="#F5EFE0",DK="#2D2D2D",WH="#ffffff";
 const card={background:WH,borderRadius:14,padding:"13px 16px",boxShadow:"0 2px 12px rgba(74,110,68,0.07)",border:"1px solid #F5EFE0",marginBottom:10};
 
-// ── Données ──────────────────────────────
+// ── Données initiales ────────────────────
 const TABS=[
   {id:"dashboard",icon:"💍",label:"Dashboard"},
   {id:"filrouge",icon:"🎀",label:"Fil Rouge"},
@@ -308,9 +329,14 @@ function BudgetLine({item,onToggle}){
 // ── App principale ────────────────────────
 function App(){
   const[tab,setTab]=useState("dashboard");
-  const[budget,setBudget]=useState(()=>BUDGET_INIT.map(b=>({...b})));
-  const[tasks,setTasks]=useState(TACHES_INIT);
-  const[echs,setEchs]=useState(ECH_INIT);
+
+  // ── États synchro Firebase ───
+  const[budget,setBudget]=useState([]);
+  const[tasks,setTasks]=useState([]);
+  const[echs,setEchs]=useState([]);
+  const[synced,setSynced]=useState(false); // indicateur connexion
+
+  // ── État local (photos = checklist jour J, pas besoin de sync) ───
   const[pd,setPd]=useState({});
   const[cd,setCd]=useState({days:"-",hours:"-",min:"-",sec:"-"});
   const[bu,setBu]=useState(false);
@@ -318,6 +344,7 @@ function App(){
   const[inf,setInf]=useState("all");
   const[bFilter,setBFilter]=useState("all");
 
+  // ── Countdown ───
   useEffect(()=>{
     const wd=new Date("2026-06-27T17:00:00");
     const tick=()=>{
@@ -328,9 +355,60 @@ function App(){
     tick();const t=setInterval(tick,1000);return()=>clearInterval(t);
   },[]);
 
-  const togglePay=id=>setBudget(bs=>bs.map(b=>b.id===id?{...b,paye:!b.paye}:b));
-  const toggleTask=id=>setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!t.done}:t));
-  const toggleEch=id=>setEchs(es=>es.map(e=>e.id===id?{...e,done:!e.done}:e));
+  // ── Firebase : écoute en temps réel ───
+  useEffect(()=>{
+    const docRef = collection => db.collection('mariage').doc(collection);
+
+    // TASKS
+    const unsubTasks = docRef('tasks').onSnapshot(snap=>{
+      if(snap.exists && snap.data() && snap.data().items){
+        setTasks(snap.data().items);
+      } else {
+        docRef('tasks').set({items: TACHES_INIT});
+        setTasks(TACHES_INIT);
+      }
+      setSynced(true);
+    }, err => { console.error(err); setSynced(false); });
+
+    // BUDGET
+    const unsubBudget = docRef('budget').onSnapshot(snap=>{
+      if(snap.exists && snap.data() && snap.data().items){
+        setBudget(snap.data().items);
+      } else {
+        docRef('budget').set({items: BUDGET_INIT});
+        setBudget(BUDGET_INIT);
+      }
+    });
+
+    // ECHEANCES
+    const unsubEchs = docRef('echeances').onSnapshot(snap=>{
+      if(snap.exists && snap.data() && snap.data().items){
+        setEchs(snap.data().items);
+      } else {
+        docRef('echeances').set({items: ECH_INIT});
+        setEchs(ECH_INIT);
+      }
+    });
+
+    return ()=>{ unsubTasks(); unsubBudget(); unsubEchs(); };
+  },[]);
+
+  // ── Toggles → écriture Firebase ───
+  const toggleTask = id => {
+    const updated = tasks.map(t=>t.id===id?{...t,done:!t.done}:t);
+    db.collection('mariage').doc('tasks').set({items: updated});
+    // setTasks est géré par onSnapshot automatiquement
+  };
+
+  const togglePay = id => {
+    const updated = budget.map(b=>b.id===id?{...b,paye:!b.paye}:b);
+    db.collection('mariage').doc('budget').set({items: updated});
+  };
+
+  const toggleEch = id => {
+    const updated = echs.map(e=>e.id===id?{...e,done:!e.done}:e);
+    db.collection('mariage').doc('echeances').set({items: updated});
+  };
 
   const totalGuests=INVITES.reduce((s,i)=>s+i.nb,0);
   const tasksDone=tasks.filter(t=>t.done).length;
@@ -363,7 +441,12 @@ function App(){
       h('div',{style:{position:"absolute",top:-40,right:-40,width:120,height:120,background:"rgba(255,255,255,0.05)",borderRadius:"50%"}}),
       h('div',{style:{fontFamily:"'Cormorant Garamond',serif",color:"white",fontSize:28,fontWeight:300,letterSpacing:3}},"💍 Luca & Émilie"),
       h('div',{style:{fontFamily:"'Cormorant Garamond',serif",color:"rgba(255,255,255,0.82)",fontSize:15,fontStyle:"italic",marginTop:4}},"Mariage · 27 juin 2026 · Le Crêt, Morzine"),
-      h('div',{style:{display:"flex",justifyContent:"center",gap:10,marginTop:14,flexWrap:"wrap"}},
+      // Indicateur sync
+      h('div',{style:{marginTop:8,display:"flex",justifyContent:"center",alignItems:"center",gap:5}},
+        h('span',{className:synced?"sync-dot":"",style:{width:8,height:8,borderRadius:"50%",background:synced?"#b7e4c7":"#fde68a",display:"inline-block"}}),
+        h('span',{style:{fontFamily:"'Jost'",fontSize:10,color:"rgba(255,255,255,0.65)",letterSpacing:0.5}},synced?"Synchronisé en temps réel":"Connexion...")
+      ),
+      h('div',{style:{display:"flex",justifyContent:"center",gap:10,marginTop:12,flexWrap:"wrap"}},
         [{v:cd.days,l:"JOURS"},{v:cd.hours,l:"HEURES"},{v:cd.min,l:"MIN"},{v:cd.sec,l:"SEC"}].map(({v,l})=>
           h('div',{key:l,style:{background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"8px 13px",minWidth:56,textAlign:"center"}},
             h('div',{style:{fontFamily:"'Cormorant Garamond',serif",color:"white",fontSize:24,fontWeight:600,lineHeight:1}},v),
@@ -403,7 +486,7 @@ function App(){
         ),
         h('div',{style:card},
           h('div',{style:{...CG(17),marginBottom:11}},"📅 Prochaines échéances"),
-          h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:"#aaa",marginBottom:10}},"Cliquer pour cocher"),
+          h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:"#aaa",marginBottom:10}},"Synchronisé · Visible par tous"),
           echs.map(e=>h('div',{key:e.id,className:"tr",onClick:()=>toggleEch(e.id),
             style:{display:"flex",gap:10,alignItems:"center",marginBottom:7,padding:"9px 11px",borderRadius:10,background:e.done?"#f0fdf4":WH,border:"1px solid "+(e.done?"#b7e4c7":"#F5EFE0"),opacity:e.done?0.6:1}},
             h(CC,{done:e.done,size:18}),
@@ -498,6 +581,10 @@ function App(){
       // ── TÂCHES ──
       tab==="taches"&&h('div',null,
         h('div',{style:{...CG(26),marginBottom:4}},"✅ Tâches"),
+        h('div',{style:{fontFamily:"'Jost'",fontSize:11,color:S,marginBottom:10,display:"flex",alignItems:"center",gap:5}},
+          h('span',{className:"sync-dot"}),
+          "Synchronisé · Visible par tous en temps réel"
+        ),
         h('div',{style:{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}},
           h('span',{style:{fontFamily:"'Jost'",fontSize:13,color:"#888",marginRight:4}},tasksDone+"/"+tasks.length+" accomplies"),
           [{id:"all",l:"Toutes"},{id:"pending",l:"À faire"},{id:"done",l:"Faites ✓"}].map(f=>
